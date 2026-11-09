@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; frame-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Two-Nova</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="brand">
+        <span class="eyes" aria-hidden="true"><i></i><i></i></span>
+        <div><strong>Two-Nova</strong><small>por S1even</small></div>
+      </div>
+      <nav class="tabs" role="tablist" aria-label="Secciones">
+        <button role="tab" id="tab-home" aria-controls="view-home" aria-selected="true" data-view="home">Inicio</button>
+        <button role="tab" id="tab-connections" aria-controls="view-connections" aria-selected="false" data-view="connections" tabindex="-1">Conexiones</button>
+        <button role="tab" id="tab-chat" aria-controls="view-chat" aria-selected="false" data-view="chat" tabindex="-1">Conversación</button>
+        <button role="tab" id="tab-people" aria-controls="view-people" aria-selected="false" data-view="people" tabindex="-1">Personalidades</button>
+        <button role="tab" id="tab-look" aria-controls="view-look" aria-selected="false" data-view="look" tabindex="-1">Apariencia</button>
+        <button role="tab" id="tab-settings" aria-controls="view-settings" aria-selected="false" data-view="settings" tabindex="-1">Ajustes</button>
+      </nav>
+      <p class="side-note">Todo se guarda en tu PC. Solo lo que escribes aquí viaja a la API de Claude con tu clave.</p>
+    </aside>
+
+    <main class="main">
+      <!-- Inicio -->
+      <section id="view-home" class="view" role="tabpanel" aria-labelledby="tab-home">
+        <header class="view-head"><div><h1 id="home-hello">Hola</h1><p class="lead" style="margin:4px 0 0">Esto es lo que está pasando en tu isla.</p></div></header>
+        <div class="cards" id="home-cards"></div>
+        <div class="row">
+          <button class="btn btn-primary" type="button" data-goto="chat">Hablar con Two-Nova</button>
+          <button class="btn" type="button" data-goto="look">Personalizar la isla</button>
+        </div>
+      </section>
+
+      <!-- Conexiones -->
+      <section id="view-connections" class="view" role="tabpanel" aria-labelledby="tab-connections" hidden>
+        <header class="view-head"><h1>Conexiones</h1></header>
+        <p class="lead">Aquí decides con qué apps habla Two-Nova. Lo que lee de ellas es información, nunca órdenes.</p>
+        <div id="connections" class="cards"></div>
+      </section>
+
+      <!-- Conversación -->
+      <section id="view-chat" class="view" role="tabpanel" aria-labelledby="tab-chat" hidden>
+        <header class="view-head">
+          <h1>Conversación</h1>
+          <div class="head-actions">
+            <label class="switch"><input type="checkbox" id="speak-toggle"><span>Leer en voz alta</span></label>
+            <button class="btn btn-ghost" id="reset" type="button">Nueva conversación</button>
+          </div>
+        </header>
+        <div id="chips" class="chips" role="radiogroup" aria-label="Personalidad"></div>
+        <div id="log" class="log" role="log" aria-live="polite" aria-label="Mensajes"></div>
+        <p id="chat-error" class="error" role="alert" hidden></p>
+        <form id="chat-form" class="composer" autocomplete="off">
+          <button type="button" class="btn btn-icon" id="mic" disabled title="El micrófono llega en el siguiente hito" aria-label="Micrófono (próximamente)">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V22h2v-3.08A7 7 0 0 0 19 12h-2Z"/></svg>
+          </button>
+          <label class="sr-only" for="input">Escribe tu mensaje</label>
+          <textarea id="input" rows="1" maxlength="4000" placeholder="Escríbele a Two-Nova…"></textarea>
+          <button class="btn btn-primary" id="send" type="submit">Enviar</button>
+        </form>
+      </section>
+
+      <!-- Personalidades -->
+      <section id="view-people" class="view" role="tabpanel" aria-labelledby="tab-people" hidden>
+        <header class="view-head">
+          <h1>Personalidades</h1>
+          <button class="btn btn-ghost" id="add-person" type="button">+ Nueva personalidad</button>
+        </header>
+        <p class="lead">Cada una tiene su voz, velocidad y tono. Cambian cómo habla, <strong>nunca</strong> lo que puede hacer.</p>
+        <p id="people-error" class="error" role="alert" hidden></p>
+        <div id="people" class="people"></div>
+      </section>
+
+      <!-- Apariencia -->
+      <section id="view-look" class="view wide" role="tabpanel" aria-labelledby="tab-look" hidden>
+        <header class="view-head">
+          <h1>Apariencia de la isla</h1>
+          <div class="head-actions">
+            <button class="btn btn-ghost" id="look-reset" type="button">Volver a lo original</button>
+            <button class="btn btn-primary" id="look-save" type="button">Guardar cambios</button>
+          </div>
+        </header>
+        <p id="look-msg" class="status" role="status"></p>
+        <div class="look">
+          <div class="look-preview">
+            <div class="preview-box">
+              <iframe id="preview" src="preview.html" title="Vista previa de la isla" loading="lazy"></iframe>
+            </div>
+            <div class="seg" role="group" aria-label="Estado de la vista previa" id="preview-modes"></div>
+          </div>
+          <div class="look-form">
+            <div class="card">
+              <h2>Estilos rápidos</h2>
+              <div id="presets" class="presets"></div>
+            </div>
+            <div class="card">
+              <h2>Colores y forma</h2>
+              <div class="grid2">
+                <div class="field"><label for="f-accent">Color de acento</label><div class="colorrow"><input id="f-accent" type="color"><input id="f-accent-hex" type="text" maxlength="7" spellcheck="false" aria-label="Acento en formato #aabbcc"></div></div>
+                <div class="field"><label for="f-bg">Color de fondo (oscuro)</label><div class="colorrow"><input id="f-bg" type="color"><input id="f-bg-hex" type="text" maxlength="7" spellcheck="false" aria-label="Fondo en formato #aabbcc"></div></div>
+                <div class="field"><label for="f-eye">Color de los ojos</label><div class="colorrow"><input id="f-eye" type="color"><button class="btn btn-ghost btn-sm" id="f-eye-auto" type="button">Igual al acento</button></div></div>
+                <div class="field"><label for="f-eyestyle">Ojos</label><select id="f-eyestyle"></select></div>
+                <div class="field"><label for="f-shape">Forma</label><select id="f-shape"></select></div>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Tamaño y posición</h2>
+              <div class="field"><label for="f-scale">Tamaño <output id="o-scale"></output></label><input id="f-scale" type="range" min="0.8" max="1.4" step="0.05"></div>
+              <div class="field"><label for="f-opacity">Opacidad <output id="o-opacity"></output></label><input id="f-opacity" type="range" min="0.7" max="1" step="0.05"></div>
+              <div class="field"><label for="f-offset">Distancia al borde de arriba <output id="o-offset"></output></label><input id="f-offset" type="range" min="0" max="80" step="2"></div>
+              <div class="field"><label for="f-glowstr">Brillo del fondo <output id="o-glowstr"></output></label><input id="f-glowstr" type="range" min="0" max="1" step="0.05"></div>
+            </div>
+            <div class="card">
+              <h2>Cómo se abre y cómo se mueve</h2>
+              <div class="grid2">
+                <div class="field"><label for="f-open">Cómo se abre</label><select id="f-open"></select></div>
+                <div class="field"><label for="f-motion">Al abrir y cerrar</label><select id="f-motion"></select></div>
+                <div class="field"><label for="f-idleanim">Animación en reposo</label><select id="f-idleanim"></select></div>
+                <div class="field"><label for="f-idlelabel">Texto de la pastilla en reposo</label><select id="f-idlelabel"></select></div>
+              </div>
+              <div class="field" id="f-idletext-wrap"><label for="f-idletext">Tu texto</label><input id="f-idletext" type="text" maxlength="24" placeholder="Ej. Black Hole"></div>
+              <p class="muted">Con "al pasar el mouse" la isla se abre cuando llegas con el cursor y se cierra cuando te vas. Un clic en la pastilla la deja fija.</p>
+            </div>
+            <div class="card">
+              <h2>Comportamiento</h2>
+              <label class="switch"><input type="checkbox" id="f-glow"><span>Brillo de color detrás de cada app</span></label>
+              <label class="switch"><input type="checkbox" id="f-seconds"><span>Mostrar segundos en el reloj</span></label>
+              <label class="switch"><input type="checkbox" id="f-anim"><span>Animaciones (parpadeo y transiciones)</span></label>
+              <label class="switch"><input type="checkbox" id="f-blur"><span>Cerrar la isla al hacer clic fuera</span></label>
+              <div class="field"><label for="f-name">Cómo te saluda</label><input id="f-name" type="text" maxlength="30"></div>
+            </div>
+            <div class="card">
+              <h2>Apps de la isla</h2>
+              <p class="muted">Elige cuáles aparecen abajo y en qué orden.</p>
+              <ul id="dock-editor" class="dock-editor"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ajustes -->
+      <section id="view-settings" class="view" role="tabpanel" aria-labelledby="tab-settings" hidden>
+        <header class="view-head"><h1>Ajustes</h1></header>
+
+        <div class="card">
+          <h2>Cerebro: API de Claude</h2>
+          <p class="muted">Tu clave se guarda cifrada con el almacén de Windows y nunca vuelve a mostrarse completa.</p>
+          <p id="key-status" class="status"></p>
+          <div class="row">
+            <label class="sr-only" for="key-input">Clave de la API</label>
+            <input id="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
+            <button class="btn btn-primary" id="key-save" type="button">Guardar clave</button>
+            <button class="btn btn-ghost" id="key-clear" type="button">Quitar</button>
+          </div>
+          <div class="grid2">
+            <div class="field"><label for="model">Modelo</label><input id="model" type="text" spellcheck="false"></div>
+            <div class="field"><label for="cap">Tope mensual (tokens)</label><input id="cap" type="number" min="1000" step="1000"></div>
+          </div>
+          <div class="usage"><div class="meter"><i id="usage-bar"></i></div><span id="usage-text" class="muted"></span></div>
+          <label class="switch"><input type="checkbox" id="speak-events"><span>Que Two-Nova hable los avisos de Claude Code (terminó, pide permiso)</span></label>
+          <div class="row end"><button class="btn btn-primary" id="settings-save" type="button">Guardar ajustes</button></div>
+          <p id="settings-msg" class="status" role="status"></p>
+        </div>
+
+        <div class="card">
+          <h2>Voces disponibles en este equipo</h2>
+          <p id="voices-info" class="muted"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="speech.js"></script>
+  <script src="../lib/theme.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>

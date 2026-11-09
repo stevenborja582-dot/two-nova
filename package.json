@@ -1,0 +1,63 @@
+{
+  "name": "two-nova",
+  "productName": "Two-Nova",
+  "version": "0.3.1",
+  "description": "Two-Nova: isla en pantalla que vigila a Claude Code: permitir o negar con un clic y avisos al terminar.",
+  "author": "S1even",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"tests/*.test.js\"",
+    "dist": "electron-builder --win nsis",
+    "conectar": "node scripts/conectar.js conectar",
+    "desconectar": "node scripts/conectar.js desconectar",
+    "estado": "node scripts/conectar.js estado",
+    "dist:portable": "electron-builder --win portable --x64"
+  },
+  "build": {
+    "appId": "local.s1even.two-nova",
+    "productName": "Two-Nova",
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Two-Nova-Setup-${version}.exe",
+      "shortcutName": "Two-Nova",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    },
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "afterPack": "scripts/after-pack.js"
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
+    "resedit": "^3.1.0"
+  }
+}

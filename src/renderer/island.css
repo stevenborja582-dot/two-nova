@@ -1,0 +1,5 @@
+/* Solo lo que pertenece a la ventana transparente de la isla. */
+html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+.stage { display: flex; justify-content: center; padding: 0 8px; container-type: inline-size; }
+#host { width: 100%; }
+body.preview .stage { padding-top: 16px; }
