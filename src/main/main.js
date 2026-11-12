@@ -278,7 +278,8 @@ app.whenReady().then(async () => {
     ? { isEncryptionAvailable: () => true, encryptString: (t) => Buffer.from(t).reverse(), decryptString: (b) => Buffer.from(b).reverse().toString() }
     : null;
   secrets = createSecrets({ dir: dataDir, safeStorage: fakeCrypto || safeStorage });
-  assistant = new Assistant({ store, secrets, book, baseUrl: testBase });
+  const testGemini = /^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.TWO_NOVA_GEMINI_BASE || '') ? process.env.TWO_NOVA_GEMINI_BASE : undefined;
+  assistant = new Assistant({ store, secrets, book, baseUrl: testBase, geminiBaseUrl: testGemini });
   server = createHookServer({ core, token: cfg.token, port: cfg.port, appName: 'isla' });
 
   try {

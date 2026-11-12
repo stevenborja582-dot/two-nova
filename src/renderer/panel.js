@@ -170,29 +170,44 @@
   });
 
   // ---------- Ajustes ----------
+  const HELP = {
+    gemini: 'Gemini tiene nivel gratuito. Consigue tu clave gratis en aistudio.google.com/apikey (inicia sesión con tu cuenta de Google y pulsa "Create API key"). En el nivel gratuito Google puede usar lo que escribas para mejorar sus productos: no pongas datos privados.',
+    claude: 'Claude cobra por uso: la clave sale de console.anthropic.com y necesita saldo en Plans & Billing (la suscripción de Claude.ai no lo cubre).',
+  };
+  const HOLDER = { gemini: 'AIza…', claude: 'sk-ant-…' };
+  async function showProvider(id) {
+    const p = settings.providers?.find((x) => x.id === id) || { model: '' };
+    $('provider-help').textContent = HELP[id] || '';
+    $('key-input').placeholder = HOLDER[id] || '';
+    $('model').value = p.model;
+    const key = await api(window.nova.key.status(id));
+    const ks = $('key-status');
+    ks.className = `status ${key.hasKey ? 'ok' : 'bad'}`;
+    ks.textContent = key.hasKey ? `Clave guardada (${key.hint}).` : (key.canEncrypt ? 'Aún no hay clave. Pégala abajo para que Two-Nova pueda conversar.' : 'Este equipo no permite cifrar claves, así que no puedo guardarla.');
+  }
   async function refreshSettings() {
     try {
-      const [key, s] = await Promise.all([api(window.nova.key.status()), api(window.nova.settings.get())]);
+      const s = await api(window.nova.settings.get());
       settings = s.settings;
-      const ks = $('key-status');
-      ks.className = `status ${key.hasKey ? 'ok' : 'bad'}`;
-      ks.textContent = key.hasKey ? `Clave guardada (${key.hint}).` : (key.canEncrypt ? 'Aún no hay clave. Pégala abajo para que Two-Nova pueda conversar.' : 'Este equipo no permite cifrar claves, así que no puedo guardarla.');
-      $('model').value = s.settings.model; $('cap').value = s.settings.monthlyTokenCap;
+      $('provider').value = s.settings.provider;
+      $('cap').value = s.settings.monthlyTokenCap;
       $('speak-events').checked = !!s.settings.speakEvents; $('speak-toggle').checked = !!s.settings.speakReplies;
       const u = s.usage; const bar = $('usage-bar');
       bar.style.width = `${u.percent}%`; bar.className = u.percent >= 100 ? 'full' : u.percent >= 80 ? 'warn' : '';
       $('usage-text').textContent = `${u.used.toLocaleString('es')} de ${u.cap.toLocaleString('es')} tokens este mes`;
+      await showProvider(s.settings.provider);
     } catch (e) { toast(e.message); }
   }
+  $('provider').addEventListener('change', () => { showProvider($('provider').value).catch((e) => toast(e.message)); });
   $('key-save').addEventListener('click', async () => {
     const v = $('key-input').value; if (!v.trim()) return;
-    try { await api(window.nova.key.set(v)); $('key-input').value = ''; toast('Clave guardada y cifrada'); refreshSettings(); } catch (e) { toast(e.message); }
+    try { await api(window.nova.key.set(v, $('provider').value)); $('key-input').value = ''; toast('Clave guardada y cifrada'); showProvider($('provider').value); } catch (e) { toast(e.message); }
   });
-  $('key-clear').addEventListener('click', async () => { try { await api(window.nova.key.clear()); toast('Clave eliminada'); refreshSettings(); } catch (e) { toast(e.message); } });
+  $('key-clear').addEventListener('click', async () => { try { await api(window.nova.key.clear($('provider').value)); toast('Clave eliminada'); showProvider($('provider').value); } catch (e) { toast(e.message); } });
   $('settings-save').addEventListener('click', async () => {
     const m = $('settings-msg');
     try {
-      await api(window.nova.settings.save({ model: $('model').value, monthlyTokenCap: Number($('cap').value), speakEvents: $('speak-events').checked }));
+      await api(window.nova.settings.save({ provider: $('provider').value, model: $('model').value, monthlyTokenCap: Number($('cap').value), speakEvents: $('speak-events').checked }));
       m.className = 'status ok'; m.textContent = 'Ajustes guardados.'; refreshSettings();
     } catch (e) { m.className = 'status bad'; m.textContent = e.message; }
   });

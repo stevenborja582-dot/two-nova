@@ -1,5 +1,6 @@
 'use strict';
 const { DEFAULTS } = require('../lib/personalities');
+const { PROVIDERS } = require('../lib/brain');
 
 /**
  * Canales del panel. Solo responde a la ventana del panel (nadie más puede pedirlos),
@@ -29,9 +30,10 @@ function registerPanelIpc({ ipcMain, isPanel, assistant, book, secrets, claudeCo
   handle('nova:settings:get', () => ({ settings: assistant.settings(), usage: assistant.usage() }));
   handle('nova:settings:save', (s) => assistant.saveSettings(s || {}));
 
-  handle('nova:key:status', () => assistant.keyStatus());
-  handle('nova:key:set', (k) => { secrets.set('anthropic', str(k, 400)); return assistant.keyStatus(); });
-  handle('nova:key:clear', () => { secrets.clear('anthropic'); return assistant.keyStatus(); });
+  const secretOf = (provider) => { const p = PROVIDERS[provider]; if (!p) throw new Error('Ese cerebro no existe.'); return p.secret; };
+  handle('nova:key:status', (provider) => assistant.keyStatus(provider ? str(provider, 20) : undefined));
+  handle('nova:key:set', (k, provider) => { const pr = provider ? str(provider, 20) : assistant.provider(); secrets.set(secretOf(pr), str(k, 400)); return assistant.keyStatus(pr); });
+  handle('nova:key:clear', (provider) => { const pr = provider ? str(provider, 20) : assistant.provider(); secrets.clear(secretOf(pr)); return assistant.keyStatus(pr); });
 
   handle('nova:cc:status', () => ({ connected: claudeCode.status().connected }));
   handle('nova:cc:connect', async () => { await claudeCode.connect(); return { connected: claudeCode.status().connected }; });

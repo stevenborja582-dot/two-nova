@@ -19,7 +19,7 @@ No necesitas Node.js para esto. Sí necesitas **Claude Code** instalado si quier
 Usa el código fuente, que pesa menos de 1 MB:
 
 1. Instala Node.js (versión LTS) desde https://nodejs.org/es.
-2. Descomprime `Two-Nova-codigo-0.3.1.zip` en una carpeta fija, por ejemplo `C:\Two-Nova`.
+2. Descomprime `Two-Nova-codigo-0.3.2.zip` en una carpeta fija, por ejemplo `C:\Two-Nova`.
 3. Doble clic en `INSTALAR-FACIL.bat`. Descarga lo necesario, crea el acceso "Two-Nova" en el escritorio y abre la app. Si se corta el internet, vuelve a abrirlo y continúa.
 
 No muevas ni borres esa carpeta después: la app corre desde ahí.
@@ -110,3 +110,12 @@ git push -u origin main
 ```
 
 Hazlo **privado** si no quieres compartirlo. No subas la carpeta `dist` (ya está en `.gitignore`).
+
+## El cerebro (con qué IA conversa)
+
+Panel → **Ajustes → Cerebro**. Por defecto es **Gemini** (tiene nivel gratuito); también puedes usar Claude.
+1. Entra a `aistudio.google.com/apikey` con tu cuenta de Google y pulsa **Create API key**.
+2. Pega la clave en Ajustes (se guarda cifrada) y pulsa **Guardar ajustes**.
+3. Nota: en el nivel gratuito Google puede usar lo que escribas para mejorar sus productos. No pongas datos privados.
+
+Cada cerebro guarda su propia clave y su propio modelo. Si algún día el modelo cambia de nombre, lo editas en el cuadro **Modelo**.

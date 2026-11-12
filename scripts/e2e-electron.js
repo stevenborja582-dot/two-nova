@@ -10,9 +10,14 @@ const assert = require('node:assert/strict');
 const apiCalls = [];
 const fakeApi = http.createServer((req, res) => {
   let b = ''; req.on('data', (c) => { b += c; });
-  req.on('end', () => { apiCalls.push({ key: req.headers['x-api-key'], body: JSON.parse(b || '{}') });
+  req.on('end', () => {
+    const gemini = req.url.includes(':generateContent');
+    apiCalls.push({ gemini, url: req.url, key: req.headers['x-goog-api-key'] || req.headers['x-api-key'], body: JSON.parse(b || '{}') });
     res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify({ content: [{ type: 'text', text: 'Claro, aquí estoy. Dime en qué te ayudo con tu proyecto.' }], usage: { input_tokens: 120, output_tokens: 24 } })); });
+    const text = 'Claro, aquí estoy. Dime en qué te ayudo con tu proyecto.';
+    res.end(JSON.stringify(gemini
+      ? { candidates: [{ content: { role: 'model', parts: [{ text }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 120, candidatesTokenCount: 24 } }
+      : { content: [{ type: 'text', text }], usage: { input_tokens: 120, output_tokens: 24 } })); });
 });
 
 const shots = process.argv[2] || os.tmpdir();
@@ -36,7 +41,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const app = await electron.launch({
     executablePath: require('electron'),
     args: ['.', '--no-sandbox', '--password-store=basic', `--user-data-dir=${data}`],
-    env: { ...process.env, TWO_NOVA_TEST_FAKE_CRYPTO: '1', TWO_NOVA_API_BASE: `http://127.0.0.1:${fakeApi.address().port}`, HOME: home, USERPROFILE: home, APPDATA: path.join(home, 'AppData') },
+    env: { ...process.env, TWO_NOVA_TEST_FAKE_CRYPTO: '1', TWO_NOVA_API_BASE: `http://127.0.0.1:${fakeApi.address().port}`, TWO_NOVA_GEMINI_BASE: `http://127.0.0.1:${fakeApi.address().port}`, HOME: home, USERPROFILE: home, APPDATA: path.join(home, 'AppData') },
   });
   const win = await app.firstWindow();
   await win.waitForLoadState('domcontentloaded');
@@ -194,6 +199,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await win.waitForSelector('.open-panel:visible');
   const [panel] = await Promise.all([app.waitForEvent('window'), win.click('.open-panel')]);
   await panel.waitForLoadState('domcontentloaded');
+  panel.on('pageerror', (e) => console.log('ERROR EN EL PANEL:', e.message));
   await panel.waitForSelector('#chips .chip', { state: 'attached' });
   await panel.waitForSelector('#home-cards .card');
   await panel.screenshot({ path: path.join(shots, 'e2e-panel-inicio.png') });
@@ -251,7 +257,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
   // guardar clave (cifrada) y conversar
   await panel.click('#tab-settings');
-  await panel.fill('#key-input', 'sk-ant-api03-PRUEBA-1234567890');
+  assert.equal(await panel.locator('#provider').inputValue(), 'gemini'); ok('el cerebro por defecto es Gemini');
+  await panel.fill('#key-input', 'AIzaSy-PRUEBA-1234567890');
   await panel.click('#key-save');
   await panel.waitForFunction(() => /Clave guardada/.test(document.getElementById('key-status').textContent));
   assert.ok(!fs.readFileSync(path.join(data, 'secrets.json'), 'utf8').includes('PRUEBA-1234567890')); ok('la clave se guarda cifrada (no en texto plano)');
@@ -264,8 +271,18 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await panel.click('#send');
   await panel.waitForSelector('.msg.bot:not(.pending)');
   assert.equal(apiCalls.length, 1);
-  assert.equal(apiCalls[0].key, 'sk-ant-api03-PRUEBA-1234567890');
-  assert.ok(apiCalls[0].body.system.includes('Profe') && apiCalls[0].body.system.includes('SOLO conversas')); ok('la API recibe la clave, la personalidad y las reglas fijas');
+  assert.equal(apiCalls[0].key, 'AIzaSy-PRUEBA-1234567890');
+  assert.ok(apiCalls[0].gemini && apiCalls[0].url.includes('/models/gemini-3.1-flash-lite:generateContent'));
+  const sys = apiCalls[0].body.systemInstruction.parts[0].text;
+  assert.ok(sys.includes('Profe') && sys.includes('SOLO conversas')); ok('Gemini recibe la clave, la personalidad y las reglas fijas');
+  // cambiar a Claude: cada cerebro tiene su propia clave
+  await panel.click('#tab-settings');
+  await panel.selectOption('#provider', 'claude');
+  await panel.waitForFunction(() => /Aún no hay clave/.test(document.getElementById('key-status').textContent));
+  assert.equal(await panel.locator('#model').inputValue(), 'claude-sonnet-5-5'); ok('cada cerebro tiene su propia clave y su propio modelo');
+  await panel.selectOption('#provider', 'gemini');
+  await panel.waitForFunction(() => /Clave guardada/.test(document.getElementById('key-status').textContent));
+  await panel.click('#tab-chat');
   await panel.screenshot({ path: path.join(shots, 'e2e-panel-chat.png') });
 
   await panel.click('#tab-people');

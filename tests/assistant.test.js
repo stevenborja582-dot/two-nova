@@ -92,8 +92,76 @@ function mkAssistant(api, extra = {}) {
   const secrets = createSecrets({ dir: tmp(), safeStorage: fakeSafe });
   secrets.set('anthropic', 'sk-ant-test-1234');
   const book = new PersonalityBook(store);
+  store.setSetting('provider', 'claude'); // estos tests prueban el camino de Claude; Gemini va aparte
   return { store, secrets, book, a: new Assistant({ store, secrets, book, baseUrl: api.url, ...extra }) };
 }
+
+const gem = (text, i = 10, o = 5) => ({ body: { candidates: [{ content: { role: 'model', parts: [{ text }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: i, candidatesTokenCount: o } } });
+function mkGemini(api) {
+  const store = new Store();
+  const secrets = createSecrets({ dir: tmp(), safeStorage: fakeSafe });
+  secrets.set('gemini', 'AIza-test-5678');
+  const book = new PersonalityBook(store);
+  return { store, secrets, book, a: new Assistant({ store, secrets, book, geminiBaseUrl: api.url }) };
+}
+
+test('gemini: es el cerebro por defecto y manda clave, modelo, personalidad e historial', async () => {
+  const api = await fakeApi((j, n) => gem(`respuesta ${n}`, 100, 20));
+  try {
+    const { a } = mkGemini(api);
+    assert.equal(a.settings().provider, 'gemini');
+    assert.equal(a.settings().model, 'gemini-3.1-flash-lite');
+    await a.chat('Hola', 'profe');
+    const r2 = await a.chat('¿Y mañana?', 'profe');
+    assert.equal(r2.reply, 'respuesta 2');
+    const c = api.calls[1];
+    assert.equal(c.headers['x-goog-api-key'], 'AIza-test-5678');
+    assert.equal(c.url, '/v1beta/models/gemini-3.1-flash-lite:generateContent');
+    assert.ok(c.json.systemInstruction.parts[0].text.includes('Profe'));
+    assert.deepEqual(c.json.contents.map((m) => m.role), ['user', 'model', 'user']);
+    assert.equal(a.usage().used, 240);
+    assert.equal(a.keyStatus().hint, '••••5678');
+  } finally { await api.close(); }
+});
+
+test('gemini: errores en español (clave mala, límite, bloqueo, vacío) sin romper el historial', async () => {
+  const outs = [
+    { status: 400, body: { error: { message: 'API key not valid. Please pass a valid API key.' } } },
+    { status: 429, body: { error: { message: 'quota' } } },
+    { body: { promptFeedback: { blockReason: 'SAFETY' } } },
+    { body: { candidates: [{ content: { parts: [] }, finishReason: 'MAX_TOKENS' }] } },
+    gem('bien'),
+  ];
+  const api = await fakeApi((j, n) => outs[n - 1]);
+  try {
+    const { a } = mkGemini(api);
+    await assert.rejects(() => a.chat('a'), /clave de Gemini no es válida/);
+    await assert.rejects(() => a.chat('b'), /límite del nivel gratuito/);
+    await assert.rejects(() => a.chat('c'), /no quiso responder/);
+    await assert.rejects(() => a.chat('d'), /se cortó/);
+    assert.equal(a.history.length, 0);
+    await a.chat('e');
+    assert.deepEqual(a.history.map((m) => m.role), ['user', 'assistant']);
+  } finally { await api.close(); }
+});
+
+test('gemini: cada cerebro guarda su clave y su modelo; no se mezclan', async () => {
+  const api = await fakeApi(() => gem('x'));
+  try {
+    const { a, secrets } = mkGemini(api);
+    secrets.set('anthropic', 'sk-ant-otra-9999');
+    assert.equal(a.keyStatus('claude').hint, '••••9999');
+    assert.equal(a.keyStatus('gemini').hint, '••••5678');
+    a.saveSettings({ provider: 'claude', model: 'claude-haiku-5-5' });
+    assert.equal(a.settings().model, 'claude-haiku-5-5');
+    a.saveSettings({ provider: 'gemini' });
+    assert.equal(a.settings().model, 'gemini-3.1-flash-lite');
+    assert.throws(() => a.saveSettings({ provider: 'otro' }), /no existe/);
+    secrets.clear('gemini');
+    await assert.rejects(() => a.chat('hola'), /Falta la clave/); // la clave de Claude no se usa con Gemini
+    assert.equal(api.calls.length, 0);
+  } finally { await api.close(); }
+});
 
 test('chat: manda clave, modelo, personalidad e historial, y suma tokens', async () => {
   const api = await fakeApi((j, n) => ok(`respuesta ${n}`, 100, 20));

@@ -1,7 +1,7 @@
 {
   "name": "two-nova",
   "productName": "Two-Nova",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Two-Nova: isla en pantalla que vigila a Claude Code: permitir o negar con un clic y avisos al terminar.",
   "author": "S1even",
   "license": "UNLICENSED",

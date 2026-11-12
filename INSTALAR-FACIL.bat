@@ -9,9 +9,9 @@ echo.
 
 rem --- Si este archivo esta junto al .zip (sin descomprimir), descomprime primero ---
 if not exist "package.json" (
-  if exist "Two-Nova-codigo-0.3.1.zip" (
+  if exist "Two-Nova-codigo-0.3.2.zip" (
     echo  Descomprimiendo el codigo...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Force -LiteralPath 'Two-Nova-codigo-0.3.1.zip' -DestinationPath 'app'"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Force -LiteralPath 'Two-Nova-codigo-0.3.2.zip' -DestinationPath 'app'"
     if errorlevel 1 (
       echo  No se pudo descomprimir el zip.
       pause

@@ -22,7 +22,7 @@
         <button role="tab" id="tab-look" aria-controls="view-look" aria-selected="false" data-view="look" tabindex="-1">Apariencia</button>
         <button role="tab" id="tab-settings" aria-controls="view-settings" aria-selected="false" data-view="settings" tabindex="-1">Ajustes</button>
       </nav>
-      <p class="side-note">Todo se guarda en tu PC. Solo lo que escribes aquí viaja a la API de Claude con tu clave.</p>
+      <p class="side-note">Todo se guarda en tu PC. Solo lo que escribes en la conversación viaja a la IA que elegiste, con tu clave.</p>
     </aside>
 
     <main class="main">
@@ -148,12 +148,16 @@
         <header class="view-head"><h1>Ajustes</h1></header>
 
         <div class="card">
-          <h2>Cerebro: API de Claude</h2>
-          <p class="muted">Tu clave se guarda cifrada con el almacén de Windows y nunca vuelve a mostrarse completa.</p>
+          <h2>Cerebro</h2>
+          <p class="muted">Con qué IA conversa Two-Nova. Tu clave se guarda cifrada con el almacén de Windows y nunca vuelve a mostrarse completa.</p>
+          <div class="field"><label for="provider">Cerebro</label>
+            <select id="provider"><option value="gemini">Gemini (Google)</option><option value="claude">Claude (Anthropic)</option></select>
+          </div>
+          <p id="provider-help" class="muted"></p>
           <p id="key-status" class="status"></p>
           <div class="row">
             <label class="sr-only" for="key-input">Clave de la API</label>
-            <input id="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
+            <input id="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…">
             <button class="btn btn-primary" id="key-save" type="button">Guardar clave</button>
             <button class="btn btn-ghost" id="key-clear" type="button">Quitar</button>
           </div>

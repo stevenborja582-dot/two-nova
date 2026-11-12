@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld('nova', {
     setActive: (id) => call('nova:people:active', String(id)),
   },
   settings: { get: () => call('nova:settings:get'), save: (s) => call('nova:settings:save', s) },
-  key: { status: () => call('nova:key:status'), set: (k) => call('nova:key:set', String(k ?? '')), clear: () => call('nova:key:clear') },
+  key: { status: (provider) => call('nova:key:status', provider ? String(provider) : null), set: (k, provider) => call('nova:key:set', String(k ?? ''), provider ? String(provider) : null), clear: (provider) => call('nova:key:clear', provider ? String(provider) : null) },
   stats: () => call('nova:stats'),
   theme: { get: () => call('nova:theme:get'), save: (t) => call('nova:theme:save', t), reset: () => call('nova:theme:reset') },
   onGoto: (cb) => ipcRenderer.on('nova:goto', (_e, section) => cb(String(section))),
