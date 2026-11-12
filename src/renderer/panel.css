@@ -143,3 +143,14 @@ input[type="color"] { width: 44px; height: 44px; padding: 2px; border-radius: 12
 .dock-editor .grow { flex: 1; }
 .dock-editor .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
 @media (max-width: 960px) { .look { grid-template-columns: 1fr; } .look-preview { position: static; } }
+
+/* Celular (control remoto) */
+.phone-card { display: flex; flex-direction: column; gap: 10px; }
+.phone-card h2 { margin: 0; } .phone-card h3 { margin: 12px 0 0; font-size: 15px; }
+.phone-card .row.between { display: flex; justify-content: space-between; align-items: center; margin: 0; }
+.phone-card .addr { margin: 2px 0; } .phone-card code { font-size: 18px; font-weight: 700; color: var(--text); background: var(--surface-3); padding: 4px 10px; border-radius: 8px; }
+.pair-box { background: var(--surface-2, var(--surface-3)); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.pair-code { font-size: clamp(32px, 6vw, 44px); font-weight: 800; letter-spacing: .12em; margin: 0; font-variant-numeric: tabular-nums; }
+.devices { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.devices li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface-3); border-radius: 12px; }
+.devices .grow { flex: 1; min-width: 0; }

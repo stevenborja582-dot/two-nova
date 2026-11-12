@@ -2,7 +2,7 @@
 Unicode true
 !define APP_NAME "Two-Nova"
 !define APP_EXE "Two-Nova.exe"
-!define APP_VERSION "0.3.2"
+!define APP_VERSION "0.4.0"
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Two-Nova"
 
 Name "${APP_NAME}"
@@ -33,7 +33,7 @@ BrandingText "Two-Nova por S1even"
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "Spanish"
 
-VIProductVersion "0.3.2.0"
+VIProductVersion "0.4.0.0"
 VIAddVersionKey /LANG=${LANG_SPANISH} "ProductName" "Two-Nova"
 VIAddVersionKey /LANG=${LANG_SPANISH} "CompanyName" "S1even"
 VIAddVersionKey /LANG=${LANG_SPANISH} "LegalCopyright" "© 2026 S1even"

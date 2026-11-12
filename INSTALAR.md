@@ -4,13 +4,13 @@ Autor: S1even. Todo corre en tu PC. No hay cuenta, pago ni servidor propio.
 
 ## Forma fácil: el instalador .exe
 
-1. Haz doble clic en `Two-Nova-Setup-0.3.0.exe`.
+1. Haz doble clic en `Two-Nova-Setup-0.4.0.exe`.
 2. Si Windows muestra "Windows protegió tu PC": clic en **Más información** y luego **Ejecutar de todos modos**. Sale porque el programa no tiene firma digital de pago; lo hiciste tú, así que es normal.
 3. Siguiente → Siguiente → Instalar → Abrir Two-Nova.
 
 Se instala solo para tu usuario (no pide administrador) en `%LOCALAPPDATA%\Programs\Two-Nova`, crea un acceso en el escritorio y en el menú Inicio, y se desinstala desde Configuración → Aplicaciones.
 
-No quieres instalar nada: usa `Two-Nova 0.3.0.exe` (portable), que se abre con doble clic. Tarda unos segundos más en abrir.
+No quieres instalar nada: usa `Two-Nova 0.4.0.exe` (portable), que se abre con doble clic. Tarda unos segundos más en abrir.
 
 No necesitas Node.js para esto. Sí necesitas **Claude Code** instalado si quieres que la isla lo vigile.
 
@@ -19,7 +19,7 @@ No necesitas Node.js para esto. Sí necesitas **Claude Code** instalado si quier
 Usa el código fuente, que pesa menos de 1 MB:
 
 1. Instala Node.js (versión LTS) desde https://nodejs.org/es.
-2. Descomprime `Two-Nova-codigo-0.3.2.zip` en una carpeta fija, por ejemplo `C:\Two-Nova`.
+2. Descomprime `Two-Nova-codigo-0.4.0.zip` en una carpeta fija, por ejemplo `C:\Two-Nova`.
 3. Doble clic en `INSTALAR-FACIL.bat`. Descarga lo necesario, crea el acceso "Two-Nova" en el escritorio y abre la app. Si se corta el internet, vuelve a abrirlo y continúa.
 
 No muevas ni borres esa carpeta después: la app corre desde ahí.
@@ -62,9 +62,31 @@ La isla aparece arriba al centro. Cuando Claude Code pide permiso ves el comando
 
 ## Qué todavía NO hace
 
-- No te escucha (el micrófono llega en el siguiente hito).
-- No controla la PC ni se conecta con Gmail, Google Calendar, Spotify, GitHub, Classroom, etc. Por ahora el cerebro **solo conversa**. En *Conexiones* ya están esas apps, marcadas como "Próximamente".
+- No te escucha (el micrófono llega en un siguiente hito).
+- No se conecta todavía con Gmail, Google Calendar, Spotify, GitHub, Classroom ni BingX. Por ahora el cerebro **solo conversa**. En *Conexiones* están esas apps, marcadas como "Próximamente".
+- No puede **encender** la PC desde el celular si la PC está apagada y solo usa WiFi (ver "Tu celular como control remoto").
 - La app Música de la isla es solo el diseño por ahora.
+
+## Tu celular como control remoto (versión 0.4)
+
+Desde el celular puedes **bloquear, suspender, reiniciar y apagar** la PC, **mandarle archivos y texto**, y **bajar archivos** que dejes en la carpeta *Descargas → Two-Nova → Para-el-cel* (o en la bandeja de la isla).
+
+**Una vez, en la PC**
+1. Instala **Tailscale** (https://tailscale.com/download), inicia sesión y déjalo encendido. Es lo que permite llegar a tu PC desde cualquier lugar sin abrir tu router.
+2. Abre Two-Nova → **Conexiones → Celular** → activa **Control desde el celular**. Windows preguntará por el firewall: marca **Redes privadas** y permite. Si no preguntó, en PowerShell como administrador:
+   ```powershell
+   New-NetFirewallRule -DisplayName "Two-Nova celular" -Direction Inbound -Protocol TCP -LocalPort 47810 -Action Allow -Profile Private
+   ```
+3. En el celular instala **Tailscale** y entra con **la misma cuenta**.
+
+**Instalar la app en el celular (APK)**
+1. En GitHub, en tu repositorio → pestaña **Actions** → *Compilar APK del celular* → **Run workflow**. A los pocos minutos termina; entra a esa ejecución y baja **Two-Nova-celular-apk** (es un .zip con `app-debug.apk`).
+2. Pasa el APK al celular, ábrelo y permite *Instalar apps de fuentes desconocidas* cuando Android lo pida.
+3. Abre la app. En la PC pulsa **Emparejar un celular**: te da una dirección (empieza con `100.`) y un código de 6 números, válido pocos minutos. Escríbelos en el celular y listo.
+
+**Seguridad:** solo responde a tu red local y a Tailscale; cada celular tiene su propio token (se puede quitar desde la PC), apagar y reiniciar esperan 30 segundos y se pueden cancelar, y todo lo que se manda va a una carpeta, nunca se ejecuta solo.
+
+**Encender la PC desde lejos:** con la PC apagada y WiFi no hay forma fiable de despertarla. Lo más seguro es un **enchufe inteligente** con el BIOS en *Restore on AC Power Loss = Power On*: apagas y prendes el enchufe y la PC arranca.
 
 ## Si algo falla
 
@@ -93,7 +115,7 @@ Configuración → Aplicaciones → Two-Nova → Desinstalar (te pregunta si bor
 
 ## Seguridad en pocas palabras
 
-- El servidor de la isla solo escucha en `127.0.0.1` (tu PC), pide un token y rechaza peticiones de páginas web.
+- El servidor de la isla solo escucha en `127.0.0.1` (tu PC), pide un token y rechaza peticiones de páginas web. El control del celular es aparte, está apagado por defecto y solo acepta tu red local y Tailscale.
 - La clave de la API va cifrada con Windows. Solo lo que escribes en el chat viaja a la API de Claude.
 - Los comandos se guardan con claves y tokens ocultos, durante 30 días.
 - Los hooks de Claude Code corren con tus permisos: no actives hooks de gente que no conoces.
@@ -103,7 +125,7 @@ Configuración → Aplicaciones → Two-Nova → Desinstalar (te pregunta si bor
 ```powershell
 git init
 git add .
-git commit -m "Two-Nova 0.3: isla con dock de apps, panel y editor de apariencia"
+git commit -m "Two-Nova 0.4: control remoto desde el celular"
 git branch -M main
 git remote add origin https://github.com/TU-USUARIO/two-nova.git
 git push -u origin main

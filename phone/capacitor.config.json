@@ -1,0 +1,13 @@
+{
+  "appId": "com.s1even.twonova",
+  "appName": "Two-Nova",
+  "webDir": "www",
+  "backgroundColor": "#0b0d12",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

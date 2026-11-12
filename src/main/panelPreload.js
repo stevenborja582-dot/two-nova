@@ -16,6 +16,12 @@ contextBridge.exposeInMainWorld('nova', {
   },
   settings: { get: () => call('nova:settings:get'), save: (s) => call('nova:settings:save', s) },
   key: { status: (provider) => call('nova:key:status', provider ? String(provider) : null), set: (k, provider) => call('nova:key:set', String(k ?? ''), provider ? String(provider) : null), clear: (provider) => call('nova:key:clear', provider ? String(provider) : null) },
+  remote: {
+    status: () => call('nova:remote:status'), enable: (on) => call('nova:remote:enable', !!on),
+    perms: (p) => call('nova:remote:perms', { power: p?.power, files: p?.files }),
+    pair: () => call('nova:remote:pair'), cancelPair: () => call('nova:remote:cancelpair'),
+    revoke: (id) => call('nova:remote:revoke', String(id)), folder: (w) => call('nova:remote:folder', String(w)),
+  },
   stats: () => call('nova:stats'),
   theme: { get: () => call('nova:theme:get'), save: (t) => call('nova:theme:save', t), reset: () => call('nova:theme:reset') },
   onGoto: (cb) => ipcRenderer.on('nova:goto', (_e, section) => cb(String(section))),

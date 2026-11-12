@@ -1,0 +1,49 @@
+name: Compilar APK del celular
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'phone/**'
+      - '.github/workflows/android.yml'
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: phone
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: phone/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Copiar la web a Android
+        run: npx cap sync android
+
+      - name: Compilar APK
+        working-directory: phone/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Two-Nova-celular-apk
+          path: phone/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

@@ -1,7 +1,7 @@
 {
   "name": "two-nova",
   "productName": "Two-Nova",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Two-Nova: isla en pantalla que vigila a Claude Code: permitir o negar con un clic y avisos al terminar.",
   "author": "S1even",
   "license": "UNLICENSED",
@@ -10,6 +10,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test \"tests/*.test.js\"",
+    "phone-check": "node scripts/phone-check.js",
     "dist": "electron-builder --win nsis",
     "conectar": "node scripts/conectar.js conectar",
     "desconectar": "node scripts/conectar.js desconectar",

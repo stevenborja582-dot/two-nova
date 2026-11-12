@@ -1,5 +1,6 @@
 'use strict';
 const path = require('node:path');
+const os = require('node:os');
 const fs = require('node:fs');
 const {
   app, BrowserWindow, Tray, Menu, safeStorage, ipcMain, dialog, screen, shell, Notification, globalShortcut, nativeImage, clipboard,
@@ -17,6 +18,7 @@ const { PersonalityBook } = require('../lib/personalities');
 const { Assistant } = require('../lib/brain');
 const { Agenda } = require('../lib/agenda');
 const { TrayFiles } = require('../lib/trayFiles');
+const { RemoteControl } = require('../lib/remote');
 const { ClipboardHistory } = require('../lib/clipboardHistory');
 const { sanitizeTheme } = require('../lib/theme');
 const { registerPanelIpc } = require('./ipc');
@@ -31,6 +33,8 @@ const BASE_W = 800;
 const BASE_H = 600;
 let theme = sanitizeTheme({});
 let clipHistory = null;
+let trayFiles = null;
+let remote = null;
 let clipTimer = null;
 let win = null;
 let panel = null;
@@ -293,15 +297,29 @@ app.whenReady().then(async () => {
     return;
   }
 
+  trayFiles = new TrayFiles(store);
+  const downloads = path.join(app.getPath('downloads'), 'Two-Nova');
+  remote = new RemoteControl({
+    store, trayFiles, clipboard, hostname: os.hostname(), version: app.getVersion(),
+    inboxDir: path.join(downloads, 'Recibidos'), outboxDir: path.join(downloads, 'Para-el-cel'),
+    notify: (kind, d) => {
+      if (kind === 'power') { send('isla:notice', { kind: 'attention', text: `${d.device} pidió: ${d.text}` }); toast('Control remoto', d.text); }
+      else if (kind === 'file') { send('isla:notice', { kind: 'done', text: `Recibí «${d.name}» de ${d.device}.` }); toast('Archivo recibido', d.name); }
+      else if (kind === 'text') toast('Texto recibido', `${d.device} te mandó ${d.chars} letras (ya están en tu portapapeles).`);
+      else if (kind === 'paired') toast('Celular emparejado', d.name);
+    },
+  });
+  if (remote.cfg().enabled) remote.start().catch((e) => log('control remoto:', e.message));
+
   registerPanelIpc({
-    ipcMain, assistant, book, secrets,
+    ipcMain, assistant, book, secrets, remote, shell,
     isPanel: (wc) => !!panel && !panel.isDestroyed() && wc === panel.webContents,
     claudeCode: { status: connectionStatus, connect: doConnect, disconnect: doDisconnect },
   });
   const isIsland = (wc) => !!win && !win.isDestroyed() && wc === win.webContents;
   registerIslandIpc({
     ipcMain, isIsland, isPanel: (wc) => !!panel && !panel.isDestroyed() && wc === panel.webContents,
-    store, agenda: new Agenda(store), trayFiles: new TrayFiles(store), clipHistory, shell, clipboard,
+    store, agenda: new Agenda(store), trayFiles, clipHistory, shell, clipboard,
     getTheme: () => theme, setTheme, resizeIsland, openPanel, send,
     startDrag: (wc, file) => { const icon = nativeImage.createFromPath(path.join(__dirname, '..', '..', 'assets', 'tray.png')); wc.startDrag({ file, icon: icon.isEmpty() ? nativeImage.createEmpty() : icon }); },
   });
@@ -342,4 +360,5 @@ app.on('will-quit', () => {
   try { core?.shutdown(); } catch { /* */ }
   try { store?.close(); } catch { /* */ }
   try { server?.server.close(); } catch { /* */ }
+  try { remote?.stop(); } catch { /* */ }
 });

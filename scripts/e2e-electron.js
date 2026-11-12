@@ -208,6 +208,39 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   assert.equal(await panel.locator('#connections .card').count(), 7); ok('Conexiones: Claude Code real y 6 apps marcadas como próximamente');
   await panel.screenshot({ path: path.join(shots, 'e2e-panel-conexiones.png') });
 
+  // Celular: activar, emparejar con el código de la pantalla y usar la API real
+  await panel.waitForSelector('#remote-enable', { state: 'attached' });
+  assert.equal(await panel.locator('#remote-enable').isChecked(), false); ok('el control remoto del celular viene apagado');
+  await panel.check('#remote-enable');
+  await panel.waitForSelector('#remote-pair');
+  await panel.click('#remote-pair');
+  await panel.waitForSelector('#pair-code');
+  const pairCode = (await panel.locator('#pair-code').textContent()).replace(/\s/g, '');
+  assert.match(pairCode, /^\d{6}$/);
+  const rport = Number((await panel.locator('.phone-card .addr code').first().textContent()).split(':')[1]);
+  const rcall = (method, p, { token, body } = {}) => new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : undefined;
+    const req = http.request({ host: '127.0.0.1', port: rport, method, path: p, headers: { ...(token ? { authorization: `Bearer ${token}` } : {}), ...(data ? { 'content-length': Buffer.byteLength(data) } : {}) } }, (res) => { let t = ''; res.on('data', (c) => { t += c; }); res.on('end', () => resolve({ status: res.statusCode, json: JSON.parse(t || '{}') })); });
+    req.on('error', reject); if (data) req.write(data); req.end();
+  });
+  assert.equal((await rcall('GET', '/v1/status')).status, 401); ok('el celular sin emparejar no entra');
+  assert.equal((await rcall('POST', '/v1/pair', { body: { code: pairCode === '000000' ? '111111' : '000000', name: 'x' } })).status, 403);
+  const paired = await rcall('POST', '/v1/pair', { body: { code: pairCode, name: 'Honor de prueba' } });
+  assert.equal(paired.status, 200); ok('se empareja con el código que muestra el panel');
+  assert.equal((await rcall('GET', '/v1/status', { token: paired.json.token })).json.host.length > 0, true);
+  await panel.waitForFunction(() => /Honor de prueba/.test(document.getElementById('phone-card').textContent), null, { timeout: 8000 }); ok('el panel muestra el celular emparejado');
+  await panel.uncheck('#remote-power');
+  await panel.waitForFunction(() => !document.getElementById('remote-power').checked);
+  const powerDenied = await rcall('POST', '/v1/power', { token: paired.json.token, body: { action: 'lock' } });
+  assert.equal(powerDenied.status, 403); ok('con el permiso de energía apagado, el celular no puede bloquear ni apagar');
+  await panel.screenshot({ path: path.join(shots, 'e2e-panel-celular.png') });
+  await panel.click('.devices .btn');
+  await panel.waitForFunction(() => /Ninguno todavía/.test(document.getElementById('phone-card').textContent));
+  assert.equal((await rcall('GET', '/v1/status', { token: paired.json.token })).status, 401); ok('al quitar el celular, deja de tener acceso');
+  await panel.uncheck('#remote-enable');
+  await panel.waitForFunction(() => !document.getElementById('remote-pair'));
+  await panel.screenshot({ path: path.join(shots, 'e2e-panel-conexiones.png') });
+
   // Apariencia: cambiar y que la isla real lo muestre
   await panel.click('#tab-look');
   await panel.waitForSelector('#f-accent');

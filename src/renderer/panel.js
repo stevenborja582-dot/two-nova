@@ -244,7 +244,53 @@
     { id: 'bingx', name: 'BingX (solo lectura)', text: 'Consultar saldos y precios. No opera ni da consejos de inversión.' },
   ];
 
+  // ---------- Celular (control remoto) ----------
+  let phoneTimer = null;
+  const fmtDate = (t) => (t ? new Date(t).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
+  async function refreshPhone() {
+    const box = $('phone-card');
+    let r;
+    try { r = await api(window.nova.remote.status()); } catch (e) { box.replaceChildren(h('p', { class: 'status bad', text: e.message })); return; }
+    const act = async (fn, okMsg) => { try { await api(fn()); if (okMsg) toast(okMsg); } catch (e) { toast(e.message); } refreshPhone(); };
+    const ts = r.addresses.find((a) => a.tailscale);
+    const kids = [
+      h('div', { class: 'row between' }, h('h2', { text: 'Celular: control remoto' }), pill(r.running ? 'Activo' : 'Apagado', r.running ? 'ok' : '')),
+      h('p', { class: 'muted', text: 'Desde tu celular puedes bloquear, suspender, reiniciar o apagar la PC (con 30 segundos para cancelar), y mandar archivos y texto en los dos sentidos. Está apagado hasta que lo actives, solo acepta tu red y Tailscale, y cada celular se empareja con un código.' }),
+      h('label', { class: 'switch' }, h('input', { type: 'checkbox', id: 'remote-enable', checked: r.enabled, onchange: (e) => act(() => window.nova.remote.enable(e.target.checked), e.target.checked ? 'Control remoto activado' : 'Control remoto apagado') }), h('span', { text: 'Activar el control remoto' })),
+    ];
+    if (r.running) {
+      kids.push(
+        h('div', { class: 'phone-addr' },
+          h('p', { class: 'muted', text: 'En la app del celular escribe esta dirección:' }),
+          ...(r.addresses.length ? r.addresses.map((a) => h('p', { class: 'addr' }, h('code', { text: `${a.ip}:${r.port}` }), h('span', { class: 'muted', text: ` · ${a.label}` }))) : [h('p', { class: 'status bad', text: 'No encuentro ninguna red activa.' })]),
+          ts ? null : h('p', { class: 'muted', text: 'Para controlar la PC desde fuera de casa instala Tailscale (gratis, tailscale.com/download) en la PC y en el celular, con la misma cuenta. Aparecerá aquí una dirección 100.x.x.x.' }),
+        ),
+        r.pairing
+          ? h('div', { class: 'pair-box' }, h('p', { class: 'muted', text: 'Escribe este código en el celular. Vale 5 minutos y se anula tras 5 errores.' }), h('p', { class: 'pair-code', id: 'pair-code', text: r.pairing.code.replace(/(\d{3})(\d{3})/, '$1 $2') }),
+              h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancelar', onclick: () => act(() => window.nova.remote.cancelPair()) }))
+          : h('div', { class: 'row' }, h('button', { class: 'btn btn-primary', id: 'remote-pair', type: 'button', text: 'Emparejar un celular', onclick: () => act(() => window.nova.remote.pair()) })),
+        h('h3', { text: 'Celulares emparejados' }),
+        r.devices.length
+          ? h('ul', { class: 'devices' }, r.devices.map((d) => h('li', {}, h('span', { class: 'grow' }, h('strong', { text: d.name }), h('span', { class: 'muted', text: ` · última vez ${fmtDate(d.lastSeen)}` })),
+              h('button', { class: 'btn btn-ghost', type: 'button', 'aria-label': `Quitar ${d.name}`, text: 'Quitar', onclick: () => act(() => window.nova.remote.revoke(d.id), 'Celular quitado') }))))
+          : h('p', { class: 'muted', text: 'Ninguno todavía.' }),
+        h('h3', { text: 'Qué puede hacer el celular' }),
+        h('label', { class: 'switch' }, h('input', { type: 'checkbox', id: 'remote-power', checked: r.power, onchange: (e) => act(() => window.nova.remote.perms({ power: e.target.checked })) }), h('span', { text: 'Bloquear, suspender, reiniciar y apagar la PC' })),
+        h('label', { class: 'switch' }, h('input', { type: 'checkbox', id: 'remote-files', checked: r.files, onchange: (e) => act(() => window.nova.remote.perms({ files: e.target.checked })) }), h('span', { text: 'Mandar y recibir archivos y texto' })),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn', type: 'button', text: 'Abrir carpeta de lo recibido', onclick: () => act(() => window.nova.remote.folder('inbox')) }),
+          h('button', { class: 'btn', type: 'button', text: 'Abrir carpeta "Para el cel"', onclick: () => act(() => window.nova.remote.folder('outbox')) })),
+        h('p', { class: 'muted', text: 'Para mandar algo al celular, ponlo en la carpeta "Para el cel" o en la bandeja de la isla. Si Windows pregunta por el firewall al activar esto, permite las redes privadas.' }),
+        h('p', { class: 'muted', text: 'Encender la PC a distancia: con solo WiFi no es fiable. Lo más seguro es un enchufe inteligente con "Restaurar tras corte de luz = Encender" en el BIOS (te explico cuando quieras).' }),
+      );
+    }
+    box.replaceChildren(...kids);
+  }
+
   async function refreshConnections() {
+    refreshPhone();
+    clearInterval(phoneTimer);
+    phoneTimer = setInterval(() => { if ($('view-connections').hidden) { clearInterval(phoneTimer); return; } if (!document.activeElement?.closest?.('#phone-card')) refreshPhone(); }, 3000);
     const box = $('connections');
     let cc = { connected: false };
     try { cc = await api(window.nova.claudeCode.status()); } catch (e) { toast(e.message); }
